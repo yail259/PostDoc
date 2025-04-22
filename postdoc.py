@@ -287,10 +287,7 @@ def main():
                         f"{custom_instruct}"
                     )
 
-                prompt = (
-                    f"Generate or update the complete {doc_type} for the following codebase. {code}"
-                    f"{instruct}"
-                )
+                prompt = f"{code}"
 
                 task = progress.add_task(f"Generating {doc_type}...", total=None)
                 result = generate_docs(model, instruct, prompt)
