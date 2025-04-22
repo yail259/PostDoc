@@ -184,7 +184,7 @@ def collect_code(path: str, file_extensions=None) -> str:
             if not any(fp.name.endswith(ext) for ext in file_extensions):
                 continue
             if is_ignored(fp):
-                console.log(f"Skipping ignored file {fp}", style="dim")
+                # console.log(f"Skipping ignored file {fp}", style="dim")
                 continue
             try:
                 content = fp.read_text(encoding="utf-8", errors="ignore")
@@ -204,6 +204,7 @@ def generate_docs(model: str, instruct: str, prompt: str) -> str:
         model=model,
         instructions=instruct,
         input=prompt,
+        temperature=0,
     )
     return response.output_text
 
@@ -240,13 +241,16 @@ def main():
         model = cfg.get("model")
         custom_instruct = cfg.get("custom_instructions", "")
 
+        if custom_instruct is None:
+            custom_instruct = ""
+
         if not doc_types:
             console.print(
                 "Error: No documentation types selected. Goodbye!", style="bold red"
             )
             sys.exit(1)
 
-        console.print(f"Collecting code from [bold]{code_path}[/bold]...")
+        console.print(f"Collecting code from [bold]{code_path}[/bold]")
         code = collect_code(code_path)
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -260,12 +264,32 @@ def main():
             check_context_window(model, custom_instruct, code)
 
             for doc_type in doc_types:
-                instruct = (
-                    f"You are a helpful assistant that writes high-quality {doc_type} for developers. "
-                    f"{custom_instruct}"
-                )
+                out_file = Path(code_path) / f"{doc_type.lower().replace(' ', '_')}.md"
+
+                # choose instructions based on whether the file exists
+                if out_file.exists():
+                    with open(out_file) as f:
+                        existing_doc = f.read()
+
+                    instruct = (
+                        "The documentation already exists. Update, proofread, and tweak it, making only minimal, safe changes. "
+                        "Preserve all critical information or replace with equivalent, updated information. "
+                        "IMPORTANT: do NOT introduce major rewrites or alter content unnecessarily."
+                        f"{custom_instruct}"
+                        f"{existing_doc}"
+                    )
+
+                    # print(instruct)
+                    # exit(1)
+                else:
+                    instruct = (
+                        f"You are an expert coder and explainer that writes high‑quality {doc_type} for developers. "
+                        f"{custom_instruct}"
+                    )
+
                 prompt = (
-                    f"Generate a complete {doc_type} for the following codebase. {code}"
+                    f"Generate or update the complete {doc_type} for the following codebase. {code}"
+                    f"{instruct}"
                 )
 
                 task = progress.add_task(f"Generating {doc_type}...", total=None)

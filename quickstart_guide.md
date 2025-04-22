@@ -1,162 +1,173 @@
-# 🚀 POSTDOC Quickstart Guide: Auto-Generate Docs that Wow! 🪄
+# 🚀 Quickstart Guide: POSTDOC 🪄
 
-Welcome to **POSTDOC**—your new documentation superpower!  
-POSTDOC is a magical CLI tool that turns your codebase into sparkling docs (READMEs, API docs, Quickstarts, and more!) using the latest OpenAI models.  
-Say goodbye to tedious writing and hello to beautifully crafted, developer-focused documentation in minutes! 🥳
-
----
-
-## ✨ Why POSTDOC?
-
-- **AI-Powered**: Leverages the world's most advanced language models for sharp, accurate docs.
-- **Flexible**: Scan any codebase—Python, JS, Go, C/C++, and more!
-- **Interactive or Automated**: Use an interactive wizard, or drop in a config file for zero-click magic.
-- **.gitignore-Aware**: Respects your .gitignore—no clutter, no secrets leaked!
-- **Customizable**: Choose doc types and even pass custom instructions.
-- **Fast & Beautiful**: Enjoy gorgeous, color-coded progress and error messages powered by `rich`.
+Welcome to **POSTDOC** — your magic wand for effortlessly conjuring high-quality documentation for any codebase! ✨🧙‍♂️  
+Whether you want a snappy Quickstart, a reference manual, or the perfect README, POSTDOC automates it in just a few commands using the power of OpenAI.  
+Let’s get you generating documentation that wows your users and teammates! 🚀
 
 ---
 
-## 🏁 Get Up & Running in 3 Minutes
+## 🛠️ What is POSTDOC?
 
-### 1. Prerequisites
+**POSTDOC** is a CLI tool that analyzes your codebase (single files or full projects), then generates developer documentation — such as Readmes, API docs, Quickstarts, and more — using OpenAI models.  
+It’s interactive, flexible, and respects your `.gitignore` to avoid documenting unwanted files.  
+All you need to provide is your code and (optionally) a YAML config. POSTDOC takes care of the rest!  
+Perfect for maintainers, open-source contributors, or anyone who’s tired of manual docs. 🤖
 
-- **Python 3.7+**
-- An [OpenAI API key](https://platform.openai.com/account/api-keys)
-- Basic command-line skills!
+---
 
-Install required packages with pip:
+## ⚡️ TL;DR — Get Started in 3 Steps
+
+### 1. Install dependencies
+
+Make sure you’ve installed the required Python libraries:
 
 ```bash
-pip install openai tiktoken questionary rich pathspec pyyaml python-dotenv
+uv sync
 ```
 
 ---
 
-### 2. Grab POSTDOC
+### 2. Set your OpenAI API Key
 
-Put `postdoc.py` in your project folder, or anywhere that's convenient.
+POSTDOC relies on OpenAI’s API. You need to [get your API key here](https://platform.openai.com/api-keys).
 
-**TIP:** Make it executable for easy CLI use:
-```bash
-chmod +x postdoc.py
-```
-
----
-
-### 3. Set Your OpenAI API Key
-
-POSTDOC uses the excellent `python-dotenv` to securely load your API key.
+Save your API key as an environment variable. The easiest way:
 
 ```bash
 echo "OPENAI_API_KEY=sk-..." > .env
 ```
 
+> POSTDOC loads `.env` automatically, so you’re good to go!
+
 ---
 
-### 4. Run the Wizard! 🧙
-
-Launch POSTDOC interactively (no config needed!):
+### 3. Run POSTDOC and Follow the Prompts
 
 ```bash
-./postdoc.py
+python postdoc.py
 ```
 
-You'll breeze through a delightful Q&A:
-- Where’s your code? (Directory or file)
-- Where to save docs?
-- What types of docs? (README, API, Quickstart, User Guide, etc.)
-- Any custom instructions for the AI?
-- Which model to use? (default: gpt-4.1)
-- Save your choices for next time? (config.yaml created automatically!)
-
-*POSTDOC* will then:
-- Read in your code (skipping files covered by `.gitignore`)
-- Generate each type of doc you chose (see live progress!)
-- Save docs as clean markdown files in your chosen directory
+- POSTDOC will interactively ask:
+  - Where’s your code (file or directory)?
+  - Where to save the docs?
+  - Which docs do you want (README, API doc, Quickstart, Tutorial, etc.)?
+  - Any special instructions for the AI?
+  - Which OpenAI model to use (default: gpt-4.1)?
+  - Want to save these settings to `config.yaml` for next time?
 
 ---
 
-#### Example Output
+## 🤩 Example: Let’s Generate a Quickstart!
+
+Suppose your code is in `./myproject`:
 
 ```bash
-$ ./postdoc.py
-🪄 POSTDOC: The 🧙 wizard for effortlessly conjuring high-quality documentation!
-Collecting code from /my/project...
-✔ Documents generated, goodbye!
+python postdoc.py
 ```
 
-Find your new docs at:
+<details>
+<summary>Example Interactive Session</summary>
+
+```txt
+Enter the path to the code directory or file:
+> ./myproject
+
+Save documentation in the same directory as source? [Y/n]
+> Y
+
+Select the types of documentation to generate:
+[ ] Readme
+[x] Quickstart guide
+[ ] API documentation
+[ ] Tutorial
+> <press Enter>
+
+Enter any custom instructions for the language model (optional):
+> Please focus on examples and clarity.
+
+Select the model to use:
+> gpt-4.1
+
+Save current settings to config.yaml? [Y/n]
+> Y
 ```
-/my/project/Readme.md
-/my/project/Quickstart_guide.md
-/my/project/API_documentation.md
-...
-```
+
+</details>
+
+POSTDOC will:
+
+- 🤖 Collect your code (skipping .gitignored files)
+- 🧙‍♂️ Call OpenAI to generate a tailored Quickstart
+- 📄 Save `quickstart_guide.md` in your chosen directory
+- 🎉 DONE!
 
 ---
 
-### 5. Use a Config File (Optional 💾)
+## 🎛️ Advanced: Using a Config File
 
-Want to automate it for CI/CD or no prompts next time?  
-POSTDOC can read settings from a YAML config file:
+You can prefill settings with a `config.yaml`:
 
-**Save as `config.yaml`:**
 ```yaml
-code_path: ./src
-output_dir: ./docs
+code_path: ./myproject
+output_dir: ./myproject/docs
 doc_types:
-  - Readme
-  - API documentation
   - Quickstart guide
-custom_instructions: |
-  Please focus on developer onboarding.
+  - API documentation
+custom_instructions: Write in a playful, inspiring style.
 model: gpt-4.1
 ```
-Run non-interactively:
+
+Then just:
+
 ```bash
-./postdoc.py --config config.yaml
+python postdoc.py --config config.yaml
 ```
 
 ---
 
-## 🛠️ Advanced: How it Works (Beneath the Magic)
+## ⭐️ Pro Tips
 
-- **Collects code** from your target directory (or a single file), skipping files by `.gitignore`, and only includes source files of popular languages.
-- **Estimates token usage** to ensure prompts fit the model's limits.
-- **Asks OpenAI** to generate doc(s) based on your choices and code.
-- **Writes** one Markdown file per doc type, e.g. `readme.md`, `user_guide.md`, etc.
-
----
-
-## 💡 Pro Tips
-
-- Use `.gitignore` to exclude generated/big/sensitive files.
-- Choose only the docs you need (reduce tokens, keep things clear).
-- Pass **custom instructions** for tone, level of detail, or target audience.
-- Works great with Python, JavaScript/TypeScript, Go, Java, C/C++/C#!
+- **.gitignore Support:** Only the files you care about are included.
+- **Custom Instructions:** “Explain for juniors”, “Write like a seasoned maintainer”, etc.
+- **Choose your Docs:** Generate as many doc types as you want — in one go!
+- **Reusable Config:** Save/load settings with `config.yaml`.
+- **Handles Big Projects:** Will warn if you hit token limits.
+- **Modern Output:** Uses [rich](https://github.com/Textualize/rich) for beautiful CLI feedback.
 
 ---
 
-## 🚨 Troubleshooting
+## 🔥 Why Use POSTDOC?
 
-- **Token/Context window exceeded?**  
-  If you see an error like `Token Limit Exceeded`, try excluding large files or breaking your codebase into smaller chunks.
-
-- **API errors?**  
-  Double-check your `.env` and OpenAI account status.
-
-- **Permission denied?**  
-  Try `chmod +x postdoc.py` or run as `python3 postdoc.py`.
+- **Save HOURS** of work every time you start or update a project.
+- **Consistent, accurate, up-to-date** documentation.
+- **Maintain & share** your code like a PRO.
+- **Wow your contributors, users, and your future self!**
 
 ---
 
-## 🎉 That’s it—Happy Documenting!
+## 🧙‍♂️ Now Go Create Docs Like Magic!
 
-You’re seconds away from the best docs your project ever had.  
-Questions? Feature requests? Let’s make documentation delightful, together!
+Ready to revolutionize your documentation workflow?  
+**Run `python postdoc.py` now and let POSTDOC conjure your docs!**
 
 ---
 
-**POSTDOC: Documentation, Reimagined.**  
-🧙🚀✨
+## 🆘 Need Help?
+
+If you hit issues:
+
+- Check your `OPENAI_API_KEY`
+- Ensure your dependencies are installed
+- See CLI errors for hints
+
+Questions or features requests? Open an issue or PR — we ❤️ contributions!
+
+---
+
+Happy documenting! ✨📚  
+— **POSTDOC Team**
+
+---
+
+**P.S.** If you love POSTDOC, star the repo and share with your friends!  
+Documentation shouldn’t be hard — let’s make it magical. 🪄
