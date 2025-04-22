@@ -1,7 +1,6 @@
 # 🪄 POSTDOC: The AI Wizard for Developers! 🪄
 
-![POSTDOC banner](https://raw.githubusercontent.com/your-repo/images/postdoc_wizard_banner.png)  
-*Effortlessly conjure high-quality documentation with a sprinkle of AI magic!*
+_Effortlessly conjure high-quality documentation with a sprinkle of AI magic!_
 
 ---
 
@@ -25,6 +24,7 @@ Welcome to **POSTDOC** — your open-source, command-line wizard for automagical
 ## 🚀 Quickstart
 
 ### 1. **Install**
+
 ```bash
 git clone https://github.com/your-repo/postdoc.git
 cd postdoc
@@ -32,6 +32,7 @@ pip install -r requirements.txt
 ```
 
 ### 2. **Set up OpenAI API Key**
+
 POSTDOC relies on OpenAI's API.  
 Create a `.env` file in the repo root:
 
@@ -40,6 +41,7 @@ OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
 ```
 
 Or export via terminal:
+
 ```bash
 export OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
 ```
@@ -47,11 +49,13 @@ export OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
 ### 3. **Run the Wizard!**
 
 #### **Interactive Mode**
+
 ```bash
 python postdoc.py
 ```
 
 You'll be prompted step-by-step to:
+
 - Choose your code directory or file
 - Select output directory
 - Pick which docs you want (README, API docs, Tutorial, and more!)
@@ -60,7 +64,9 @@ You'll be prompted step-by-step to:
 - Save these settings for next time!
 
 #### **Config Mode**
+
 Save your settings to `config.yaml` (can be created interactively):
+
 ```yaml
 code_path: ./my_project
 output_dir: ./my_project/docs
@@ -71,7 +77,9 @@ doc_types:
 model: gpt-4.1
 custom_instructions: "Add plenty of examples and keep a friendly tone!"
 ```
+
 Then run:
+
 ```bash
 python postdoc.py --config config.yaml
 ```
@@ -101,12 +109,15 @@ python postdoc.py --config config.yaml
 ## 💡 Examples
 
 #### **Generate a README for your project**
+
 ```bash
 python postdoc.py -c config.yaml
 ```
+
 _or just run `python postdoc.py` and answer the prompts!_
 
 #### **Supported documentation types**
+
 - [x] Readme
 - [x] API documentation
 - [x] Quickstart guide
@@ -121,15 +132,19 @@ Docs are output as Markdown files in your chosen directory.
 ## 🤔 FAQ
 
 #### **What languages are supported?**
+
 Out of the box: `.py`, `.js`, `.ts`, `.java`, `.go`, `.c`, `.cpp`, `.cs`
-  
+
 #### **Can I add my own doc type?**
+
 Absolutely! Just edit the list in `prompt_user()` for instant new options.
 
 #### **Is it safe for private code?**
+
 OpenAI receives your code. Handle secrets and privacy accordingly.
 
 #### **Does it work with huge codebases?**
+
 The tool checks token limits before generation and warns if your code is too large for the model context window.
 
 ---
@@ -147,6 +162,7 @@ The tool checks token limits before generation and warns if your code is too lar
 ## 📜 License & Contributing
 
 POSTDOC is MIT licensed and welcomes contributions!
+
 - Fork, branch, and PR your improvements!
 - Bug reports and feature requests are magical, too.
 
@@ -169,6 +185,6 @@ Questions? [Open an issue](https://github.com/your-repo/postdoc/issues)
 
 <div align="center">
 
-_🪄 POSTDOC — Docs, conjured. Effortlessly._  
+_🪄 POSTDOC — Docs, conjured. Effortlessly._
 
 </div>
