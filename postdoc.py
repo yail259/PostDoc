@@ -4,6 +4,7 @@ POSTDOC CLI Tool
 
 This script generates documentation for a codebase or single file using OpenAI's API.
 It can load settings from a YAML config file or interactively prompt the user.
+It also respects your .gitignore patterns when collecting code.
 """
 
 import os
@@ -24,7 +25,7 @@ from rich.progress import (
     BarColumn,
     TimeElapsedColumn,
 )
-
+import pathspec
 from dotenv import load_dotenv
 
 # Initialize rich console for styled output
@@ -107,6 +108,15 @@ def prompt_user() -> dict:
     return settings
 
 
+def load_gitignore(root: Path):
+    """Load .gitignore from the given root and return a PathSpec matcher."""
+    gitignore_file = root / ".gitignore"
+    if not gitignore_file.exists():
+        return None
+    lines = gitignore_file.read_text(encoding="utf-8", errors="ignore").splitlines()
+    return pathspec.PathSpec.from_lines("gitwildmatch", lines)
+
+
 def check_context_window(model: str, instruct: str, prompt: str):
     """Count tokens and ensure they fit within the model's context window."""
     context_window = models[model]["context_window"]
@@ -121,7 +131,6 @@ def check_context_window(model: str, instruct: str, prompt: str):
         encoding = tiktoken.get_encoding(fallback)
 
     full_prompt = instruct + "\n" + prompt
-    # Allow special tokens in encoding to avoid errors
     token_count = len(encoding.encode(full_prompt, disallowed_special=()))
     console.print(f"[blue]Total input tokens:[/blue] {token_count}")
 
@@ -138,38 +147,54 @@ def check_context_window(model: str, instruct: str, prompt: str):
 
 
 def collect_code(path: str, file_extensions=None) -> str:
-    """Collect code content from a directory or single file into a string."""
+    """Collect code content from a directory or single file into a string, skipping .gitignore patterns."""
     if file_extensions is None:
         file_extensions = [".py", ".js", ".ts", ".java", ".go", ".c", ".cpp", ".cs"]
 
+    target = Path(path)
+    # Determine root for .gitignore (dir or parent of file)
+    root = target if target.is_dir() else target.parent
+    spec = load_gitignore(root)
     code_str = ""
-    p = Path(path)
-    if p.is_file():
-        if any(p.name.endswith(ext) for ext in file_extensions):
+
+    def is_ignored(fp: Path) -> bool:
+        if not spec:
+            return False
+        try:
+            rel = fp.relative_to(root).as_posix()
+        except ValueError:
+            return False
+        return spec.match_file(rel)
+
+    if target.is_file():
+        if any(target.name.endswith(ext) for ext in file_extensions) and not is_ignored(
+            target
+        ):
             try:
-                code_str = p.read_text(encoding="utf-8", errors="ignore")
+                code_str = target.read_text(encoding="utf-8", errors="ignore")
             except Exception:
-                console.log(f"Warning: Could not read file {p}")
+                console.log(f"Warning: Could not read file {target}")
         else:
-            console.print(
-                f"Warning: File {p} does not match extensions; skipping.",
-                style="yellow",
-            )
-    elif p.is_dir():
-        for root, _, files in os.walk(path):
-            for file in files:
-                if any(file.endswith(ext) for ext in file_extensions):
-                    filepath = os.path.join(root, file)
-                    try:
-                        with open(
-                            filepath, "r", encoding="utf-8", errors="ignore"
-                        ) as f:
-                            code_str += f"\n\n# File: {filepath}\n" + f.read()
-                    except Exception:
-                        console.log(f"Warning: Could not read file {filepath}")
+            console.print(f"Skipping file {target}", style="yellow")
+
+    elif target.is_dir():
+        for fp in root.rglob("*"):
+            if not fp.is_file():
+                continue
+            if not any(fp.name.endswith(ext) for ext in file_extensions):
+                continue
+            if is_ignored(fp):
+                console.log(f"Skipping ignored file {fp}", style="dim")
+                continue
+            try:
+                content = fp.read_text(encoding="utf-8", errors="ignore")
+                code_str += f"\n\n# File: {fp}\n" + content
+            except Exception:
+                console.log(f"Warning: Could not read file {fp}")
     else:
         console.print(f"Error: Path {path} not found.", style="bold red")
         sys.exit(1)
+
     return code_str
 
 
@@ -209,7 +234,7 @@ def main():
 
     try:
         cfg = load_config(args.config) if args.config else prompt_user()
-        code_path = cfg.get("code_dir")
+        code_path = cfg.get("code_path")
         output_dir = cfg.get("output_dir")
         doc_types = cfg.get("doc_types", [])
         model = cfg.get("model")
@@ -232,13 +257,16 @@ def main():
             TimeElapsedColumn(),
             transient=True,
         ) as progress:
+            check_context_window(model, custom_instruct, code)
+
             for doc_type in doc_types:
-                instruct = f"You are a helpful assistant that writes high-quality {doc_type} for developers. {custom_instruct}"
+                instruct = (
+                    f"You are a helpful assistant that writes high-quality {doc_type} for developers. "
+                    f"{custom_instruct}"
+                )
                 prompt = (
                     f"Generate a complete {doc_type} for the following codebase. {code}"
                 )
-
-                check_context_window(model, instruct, prompt)
 
                 task = progress.add_task(f"Generating {doc_type}...", total=None)
                 result = generate_docs(model, instruct, prompt)
