@@ -3,6 +3,8 @@ import tiktoken
 
 from dotenv import load_dotenv
 
+import re
+
 # Load environment variables and initialize OpenAI client
 load_dotenv()
 
@@ -10,6 +12,24 @@ load_dotenv()
 models = {"gpt-4.1": {"context_window": 1047576}}
 
 client = OpenAI()
+
+_CODE_FENCE_RE = re.compile(
+    r"^\s*```(?:markdown)?[ \t]*\n"  # opening fence, optionally “markdown”
+    r"([\s\S]*?)"  # capture everything (including newlines)
+    r"\n```[ \t]*\s*$",  # closing fence
+    re.MULTILINE,
+)
+
+
+def unwrap_markdown_block(text: str) -> str:
+    """
+    If `text` is wrapped in a ```markdown … ``` fence, strip the top and bottom fences
+    and return the inner content. Otherwise return `text` unchanged.
+    """
+    m = _CODE_FENCE_RE.match(text)
+    if m:
+        return m.group(1)
+    return text
 
 
 def check_context_window(model: str, instruct: str, prompt: str):
@@ -42,4 +62,4 @@ def generate_docs(model: str, instruct: str, prompt: str) -> str:
         input=prompt,
         temperature=0,
     )
-    return response.output_text
+    return unwrap_markdown_block(response.output_text)

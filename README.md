@@ -1,4 +1,3 @@
-```markdown
 # POSTDOC
 
 **The 🧙 wizard for effortlessly conjuring high-quality documentation!**
@@ -149,5 +148,4 @@ For questions or support, please open an issue on GitHub.
 
 ```
 **Happy documenting!** 🪄
-```
 ```
