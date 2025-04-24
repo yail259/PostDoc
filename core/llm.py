@@ -25,36 +25,62 @@ def _lazy_import(name: str):
 # Pull in any OPENAI_API_BASE you set in your CLI (or in .env)
 load_dotenv()
 
-# Supported models and their context window sizes
-models = {
-    "gpt-4.1": {"context_window": 1047576},
-    "phi4": {"context_window": 16000},
+PROVIDER_MODELS = {
+    "OpenAI": {
+        "gpt-4.1": 1_000_000,
+        "gpt-4o": 128_000,
+        "gpt-4.5": 128_000,
+        "gpt-4-turbo": 128_000,
+        # "o4-mini": 200_000, # temperature is not supported
+        # "o3": 200_000, # temperature is not supported
+    },
+    "AzureOpenAI": {
+        "gpt-4o": 128_000,
+        "gpt-4-turbo": 128_000,
+        "gpt-4o-mini": 128_000,
+        # "o4-mini": 200_000, # temperature is not supported
+        # "o3": 200_000, # temperature is not supported
+    },
+    "Anthropic": {
+        "claude-3.7-sonnet": 200_000,
+        "claude-3.5-haiku": 200_000,
+        "claude-3-opus": 200_000,
+    },
+    "Gemini": {
+        "gemini-2.5-pro-preview-03-25": 1_000_000,
+        "gemini-2.5-flash-preview-04-17": 1_000_000,
+        "gemini-2.0-flash": 1_000_000,
+        "gemini-1.5-pro": 2_000_000,
+    },
 }
-
-
-_CODE_FENCE_RE = re.compile(
-    r"^\s*```(?:markdown)?[ \t]*\n"  # opening fence, optionally “markdown”
-    r"([\s\S]*?)"  # capture everything
-    r"\n```[ \t]*\s*$",  # closing fence
-    re.MULTILINE,
-)
 
 
 def unwrap_markdown_block(text: str) -> str:
     """
-    If `text` is wrapped in a ```markdown … ``` fence, strip the fences
-    and return the inner content. Otherwise return text unchanged.
+    If `text` starts with ```markdown and ends with ```, remove the fences
+    and return the inner content. Otherwise return the text unchanged.
     """
-    m = _CODE_FENCE_RE.match(text)
-    return m.group(1) if m else text
+    lines = text.splitlines()
+
+    if (
+        len(lines) >= 2
+        and lines[0].strip() == "```markdown"
+        and lines[-1].strip() == "```"
+    ):
+        return "\n".join(lines[1:-1])
+
+    return text
 
 
-def check_context_window(model: str, instruct: str, prompt: str):
+def check_context_window(provider: str, model: str, instruct: str, prompt: str):
     """
     Count tokens and return (token_count, context_window, fallback_encoding).
     Raises KeyError if `model` isn’t in `models`.
     """
-    context_window = models[model]["context_window"]
+    try:
+        context_window = PROVIDER_MODELS[provider][model]["context_window"]
+    except Exception:
+        context_window = float("inf")
 
     try:
         encoding = tiktoken.encoding_for_model(model)
@@ -69,7 +95,9 @@ def check_context_window(model: str, instruct: str, prompt: str):
     return token_count, context_window, fallback
 
 
-def _generate_openai(model: str, instruct: str, prompt: str) -> str:
+def _generate_openai(
+    model: str, instruct: str, prompt: str, temperature: float, **kw
+) -> str:
     """
     Use OpenAI's API to generate documentation.
     Honors any OPENAI_API_BASE you’ve set in your environment.
@@ -81,7 +109,7 @@ def _generate_openai(model: str, instruct: str, prompt: str) -> str:
         model=model,
         instructions=instruct,
         input=prompt,
-        temperature=0,
+        temperature=temperature,
     )
     return response.output_text
 
@@ -124,17 +152,26 @@ def _generate_anthropic(
 def _generate_google(
     model: str, instruct: str, prompt: str, temperature: float, **kw
 ) -> str:
-    genai = _lazy_import("google.generativeai")
-    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-    gmodel = genai.GenerativeModel(model_name=model)
-    resp = gmodel.generate_content(
-        [
-            {"role": "system", "parts": [instruct]},
-            {"role": "user", "parts": [prompt]},
-        ],
-        generation_config={"temperature": temperature},
+    google = _lazy_import("google")
+    types = google.genai.types
+    client = google.genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+    response = client.models.generate_content(
+        model=model,
+        contents=[prompt],
+        config=types.GenerateContentConfig(
+            temperature=temperature,
+            system_instruction=instruct,
+        ),
     )
-    return resp.text
+    return response.text
+
+
+def get_ollama_models():
+    ollama_sdk = _lazy_import("ollama")
+    names = [x.model for x in ollama_sdk.list().models]
+
+    return names
 
 
 def _generate_ollama(
@@ -192,10 +229,7 @@ def build_instruction(
     out_file = Path(output_dir) / f"{doc_type.lower().replace(' ', '_')}.md"
 
     if out_file.exists():
-        existing_doc = ""
-        # only read the existing file if it's NOT inside code_path
-        if not is_within_directory(out_file, Path(code_path)):
-            existing_doc = out_file.read_text()
+        existing_doc = out_file.read_text()
         return (
             "The documentation already exists. Update, proofread, and tweak it, making only minimal, safe changes. "
             "Preserve all critical information or replace with equivalent, updated information. "

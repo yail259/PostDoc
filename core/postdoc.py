@@ -24,7 +24,13 @@ from rich.progress import (
 )
 
 from crawler import collect_code, find_extensions
-from llm import build_instruction, check_context_window, generate_docs, models
+from llm import (
+    build_instruction,
+    check_context_window,
+    generate_docs,
+    PROVIDER_MODELS,
+    get_ollama_models,
+)
 
 console = Console()
 
@@ -37,10 +43,37 @@ def load_config(path: str) -> dict:
 
 def prompt_user() -> dict:
     """Interactively prompt the user for settings if no config file is provided."""
+
+    # Prompt for LLM provider
+    provider_choice = questionary.select(
+        "Select your LLM provider:",
+        choices=list(PROVIDER_MODELS.keys()) + ["Ollama"],
+        default="OpenAI",
+    ).ask()
+
+    # Handle Ollama models separately
+    if provider_choice == "Ollama":
+        model_names = get_ollama_models()
+        model_choice = questionary.select(
+            "Select an Ollama model:",
+            choices=model_names,
+            default=model_names[0] if model_names else None,
+        ).ask()
+    else:
+        model_dict = PROVIDER_MODELS.get(provider_choice, {})
+        model_names = list(model_dict.keys())
+        model_choice = questionary.select(
+            f"Select the LLM model to use from {provider_choice}:",
+            choices=model_names,
+            default=model_names[0] if model_names else None,
+        ).ask()
+
+    # Prompt for code directory path
     code_path = questionary.path(
         "Enter the path to the code directory:", only_directories=True
     ).ask()
 
+    # Prompt for output directory
     save_same = questionary.confirm(
         "Save documentation in the same directory as source?", default=True
     ).ask()
@@ -52,6 +85,7 @@ def prompt_user() -> dict:
         ).ask()
     )
 
+    # Prompt for file extensions to skip
     blacklist = (
         questionary.checkbox(
             "Skip files with these extensions:",
@@ -60,6 +94,7 @@ def prompt_user() -> dict:
         or []
     )
 
+    # Prompt for documentation types to generate
     doc_types = (
         questionary.checkbox(
             "Select documentation types to generate:",
@@ -75,36 +110,28 @@ def prompt_user() -> dict:
         or []
     )
 
+    # Prompt for any custom instructions
     custom_instructions = (
         questionary.text("Enter any custom instructions (optional):").ask() or ""
     )
 
-    model_choice = questionary.select(
-        "Select the LLM model to use:",
-        choices=list(models.keys()),
-        default=list(models.keys())[0],
-    ).ask()
-
-    provider_choice = questionary.select(
-        "Select your LLM provider:",
-        choices=["OpenAI", "AzureOpenAI", "Anthropic", "Gemini", "Ollama"],
-        default="OpenAI",
-    ).ask()
-
+    # Prompt to save settings
     save_settings = questionary.confirm(
         "Save current settings to config.yaml?", default=True
     ).ask()
 
+    # Compile settings into a dictionary
     settings = {
+        "provider": provider_choice,
+        "model": model_choice,
         "code_path": code_path,
         "output_dir": output_dir,
         "blacklist": blacklist,
         "doc_types": doc_types,
         "custom_instructions": custom_instructions,
-        "model": model_choice,
-        "provider": provider_choice,
     }
 
+    # Save settings to config.yaml if confirmed
     if save_settings:
         with open("config.yaml", "w", encoding="utf-8") as f:
             yaml.safe_dump(settings, f)
@@ -154,11 +181,12 @@ def main():
 
     try:
         token_count, ctx_win, fallback = check_context_window(
-            model, custom_instruct, code
+            provider, model, custom_instruct, code
         )
     except KeyError:
-        console.print(f"[bold red]Error:[/] Unknown model {model!r}")
-        sys.exit(1)
+        console.print(
+            f"[bold red]Error:[/] Unknown model {model!r}, context length may be exceeded and fail"
+        )
 
     if fallback:
         console.print(f"[yellow]Falling back to tokenizer {fallback}[/yellow]")
