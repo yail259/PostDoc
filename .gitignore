@@ -15,3 +15,5 @@ batch*
 config*
 
 web/
+
+test.py
