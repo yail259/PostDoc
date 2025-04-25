@@ -219,8 +219,9 @@ def main():
 
             task = prog.add_task(f"Generating {doc_type}…", total=1)
 
-            # Delegate actual LLM call to llm.py
             result = generate_docs(model, instruct, prompt, provider=provider)
+
+            # TODO: add the generated document to context for next document?
 
             out = Path(output_dir) / f"{doc_type.lower().replace(' ', '_')}.md"
             write_to_file(str(out), result)

@@ -12,6 +12,7 @@
 POSTDOC requires Python 3.10+ and uses [uv](https://docs.astral.sh/uv/getting-started/installation/) for dependency management.
 
 **To install all dependencies:**
+
 1. [Install uv](https://docs.astral.sh/uv/getting-started/installation/)
 2. In your project directory, run:
    ```sh
@@ -34,17 +35,18 @@ python3 core/postdoc.py [-c CONFIG]
 
 POSTDOC can be configured via a YAML file or interactively. Supported settings:
 
-| Key                   | Type         | Description                                                                 |
-|-----------------------|--------------|-----------------------------------------------------------------------------|
-| `code_path`           | str          | Path to code directory or file.                                             |
-| `output_dir`          | str          | Directory to save generated documentation.                                  |
-| `blacklist`           | list[str]    | List of file extensions to skip (e.g., [".md", ".test"]).                   |
-| `doc_types`           | list[str]    | Documentation types to generate (e.g., ["Readme", "API documentation"]).    |
-| `custom_instructions` | str          | Custom instructions for the LLM (optional).                                 |
-| `model`               | str          | Model name (e.g., "gpt-4.1").                                               |
-| `provider`            | str          | LLM provider ("OpenAI", "AzureOpenAI", "Anthropic", "Gemini", "Ollama").    |
+| Key                   | Type      | Description                                                              |
+| --------------------- | --------- | ------------------------------------------------------------------------ |
+| `code_path`           | str       | Path to code directory or file.                                          |
+| `output_dir`          | str       | Directory to save generated documentation.                               |
+| `blacklist`           | list[str] | List of file extensions to skip (e.g., [".md", ".test"]).                |
+| `doc_types`           | list[str] | Documentation types to generate (e.g., ["Readme", "API documentation"]). |
+| `custom_instructions` | str       | Custom instructions for the LLM (optional).                              |
+| `model`               | str       | Model name (e.g., "gpt-4.1").                                            |
+| `provider`            | str       | LLM provider ("OpenAI", "AzureOpenAI", "Anthropic", "Gemini", "Ollama"). |
 
 **Example `config.yaml`:**
+
 ```yaml
 code_path: ./src
 output_dir: ./docs
@@ -54,6 +56,15 @@ custom_instructions: "Add company-specific style."
 model: "gpt-4.1"
 provider: "OpenAI"
 ```
+
+---
+
+## TODOs
+
+[] add generated document to context window???
+[] add RAG system for context window issue
+[] package into binary?
+[] multilanguage support?
 
 ---
 
@@ -76,6 +87,7 @@ provider: "OpenAI"
   Main CLI logic: loads config, collects code, checks token limits, generates docs, writes output.
 
 **CLI Flow:**
+
 1. Load config (YAML or interactive).
 2. Collect code (respects `.gitignore` and blacklist).
 3. Check token count vs. model context window.
@@ -110,6 +122,7 @@ provider: "OpenAI"
 
 - `PROVIDER_MODELS: dict`  
   Maps provider/model names to context window sizes, e.g.:
+
   ```python
   PROVIDER_MODELS = {
       "OpenAI": {
