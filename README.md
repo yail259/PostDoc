@@ -61,10 +61,10 @@ provider: "OpenAI"
 
 ## TODOs
 
-[] add generated document to context window???
-[] add RAG system for context window issue
-[] package into binary?
-[] multilanguage support?
+- [ ] add generated document to context window???
+- [ ] add RAG system for context window issue
+- [ ] package into binary?
+- [ ] multilanguage support?
 
 ---
 
