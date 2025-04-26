@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Iterator
 import pathspec
 from rich.console import Console
 
@@ -41,27 +42,30 @@ def find_extensions(dir_path: str) -> list[str]:
     return sorted(ext_set)
 
 
-def collect_code(dir_path: str, blacklisted: list[str]) -> str:
-    """
-    Walks dir_path (respecting .gitignore), skips any files whose
-    extension is in `blacklisted`, and returns a single concatenated string
-    of all remaining file contents.
-    """
+def collect_code_chunks(
+    dir_path: str, blacklist: list[str]
+) -> Iterator[tuple[dict, list[str]]]:
+    """Yield (chunk, warning_messages) tuples, skipping .git and respecting .gitignore."""
     root = Path(dir_path)
     spec = load_gitignore(root)
-    code_str = ""
+
+    warnings = []
 
     for fp in root.rglob("*"):
+        # Skip .git folder entirely
+        if ".git" in fp.parts:
+            continue
+
         if not fp.is_file() or is_ignored(fp, spec, root):
             continue
+
         ext = fp.suffix or "(no extension)"
-        if ext in blacklisted:
-            console.print(f"[yellow]Skipping {fp}[/yellow]")
+        if blacklist and ext in blacklist:
+            warnings.append(f"Skipping {fp} (extension {ext} not allowed)")
             continue
         try:
             text = fp.read_text(encoding="utf-8", errors="ignore")
-            code_str += f"\n\n# File: {fp}\n" + text
-        except Exception:
-            console.log(f"Warning: Could not read file {fp}")
-
-    return code_str
+            yield {"path": str(fp.relative_to(root)), "content": text}, warnings
+            warnings.clear()
+        except Exception as e:
+            warnings.append(f"Could not read {fp}: {e}")

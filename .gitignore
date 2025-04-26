@@ -17,3 +17,5 @@ config*
 web/
 
 test.py
+
+cache*

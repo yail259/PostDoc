@@ -2,8 +2,6 @@ import tiktoken
 
 from dotenv import load_dotenv
 
-import re
-
 # Optional imports guarded at runtime so that missing libraries only matter
 # when their provider is actually used.
 from importlib import import_module
@@ -72,16 +70,22 @@ def unwrap_markdown_block(text: str) -> str:
     return text
 
 
-def check_context_window(provider: str, model: str, instruct: str, prompt: str):
+def get_context_window(provider: str, model: str) -> int:
     """
-    Count tokens and return (token_count, context_window, fallback_encoding).
-    Raises KeyError if `model` isn’t in `models`.
+    Lookup context window size for a model.
+    Returns inf if unknown.
     """
     try:
-        context_window = PROVIDER_MODELS[provider][model]["context_window"]
+        return PROVIDER_MODELS[provider][model]["context_window"]
     except Exception:
-        context_window = float("inf")
+        return float("inf")
 
+
+def count_tokens(text: str, model: str) -> tuple[int, str | None]:
+    """
+    Count tokens in text for the given model.
+    Returns (token_count, fallback_encoding_used).
+    """
     try:
         encoding = tiktoken.encoding_for_model(model)
         fallback = None
@@ -89,9 +93,17 @@ def check_context_window(provider: str, model: str, instruct: str, prompt: str):
         fallback = "o200k_base"
         encoding = tiktoken.get_encoding(fallback)
 
-    full_prompt = instruct + "\n" + prompt
-    token_count = len(encoding.encode(full_prompt, disallowed_special=()))
+    token_count = len(encoding.encode(text, disallowed_special=()))
+    return token_count, fallback
 
+
+def check_context_window(provider: str, model: str, instruct: str, prompt: str):
+    """
+    Wrapper: Get token count, context window, and fallback encoding.
+    """
+    context_window = get_context_window(provider, model)
+    full_prompt = instruct + "\n" + prompt
+    token_count, fallback = count_tokens(full_prompt, model)
     return token_count, context_window, fallback
 
 

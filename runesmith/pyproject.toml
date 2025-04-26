@@ -1,0 +1,27 @@
+[project]
+name = "runesmith"
+version = "0.1.0"
+description = "**runesmith** is a CLI tool for generating and updating documentation for codebases or single files using OpenAI's API and other LLM providers."
+readme = "README.md"
+authors = [
+    { name = "Yao Ke", email = "yaoke259@outlook.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "ollama>=0.4.8",
+    "openai>=1.75.0",
+    "pathspec>=0.12.1",
+    "python-dotenv>=1.1.0",
+    "pyyaml>=6.0.2",
+    "questionary>=2.1.0",
+    "rich>=14.0.0",
+    "tiktoken>=0.9.0",
+    "typer>=0.15.2",
+]
+
+[project.scripts]
+runesmith = "runesmith.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
