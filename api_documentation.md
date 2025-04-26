@@ -5,60 +5,61 @@
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Core Features](#core-features)
-3. [Architecture](#architecture)
-4. [Installation & Setup](#installation--setup)
-5. [Usage](#usage)
+2. [Core Functionality](#core-functionality)
+3. [Key Features](#key-features)
+4. [Architecture](#architecture)
+5. [Installation & Setup](#installation--setup)
+6. [Usage](#usage)
     - [Interactive Mode](#interactive-mode)
     - [Config-Driven Mode](#config-driven-mode)
     - [Configuration Options](#configuration-options)
-6. [CLI Reference](#cli-reference)
-7. [LLM Provider Integration](#llm-provider-integration)
-8. [Internal Workflow](#internal-workflow)
-    - [Codebase Crawling](#codebase-crawling)
-    - [Token Counting & Context Management](#token-counting--context-management)
-    - [Documentation Generation](#documentation-generation)
-9. [Dependency Management](#dependency-management)
-10. [Project Structure](#project-structure)
-11. [Extending Runesmith](#extending-runesmith)
-12. [.gitignore Policy](#gitignore-policy)
-13. [Versioning & Python Version](#versioning--python-version)
-14. [License](#license)
-15. [Acknowledgements](#acknowledgements)
-16. [Planned Enhancements](#planned-enhancements)
-17. [Contribution Guidelines](#contribution-guidelines)
+7. [CLI Reference](#cli-reference)
+8. [LLM Provider Integration](#llm-provider-integration)
+9. [Internal Workflow](#internal-workflow)
+10. [Dependency Management](#dependency-management)
+11. [Project Structure](#project-structure)
+12. [Extending Runesmith](#extending-runesmith)
+13. [.gitignore Policy](#gitignore-policy)
+14. [Versioning & Python Version](#versioning--python-version)
+15. [License](#license)
+16. [Acknowledgements](#acknowledgements)
+17. [Planned Enhancements](#planned-enhancements)
+18. [Contribution Guidelines](#contribution-guidelines)
+19. [Changelog](#changelog)
 
 ---
 
 ## Overview
 
-**Runesmith** is a Python-based CLI tool for generating, updating, and managing code documentation using large language models (LLMs) such as OpenAI, Azure OpenAI, Anthropic, Gemini, and Ollama. It is designed to automate and streamline the creation of high-quality documentation for codebases, supporting both interactive and configuration-driven workflows.
-
-Runesmith also provides infrastructure-as-code (IaC) blueprint management capabilities, focusing on modular, reusable, and composable infrastructure definitions for cloud-agnostic deployments.
+**Runesmith** is a Python-based CLI tool for generating, updating, and managing high-quality code documentation using large language models (LLMs) such as OpenAI, Azure OpenAI, Anthropic, Gemini, and Ollama. It automates the creation and maintenance of documentation for codebases, supporting both interactive and configuration-driven workflows. Runesmith also provides infrastructure-as-code (IaC) blueprint management, focusing on modular, reusable, and composable infrastructure definitions for cloud-agnostic deployments.
 
 ---
 
-## Core Features
+## Core Functionality
 
-- **Automatic Documentation Generation**: Generate or update documentation for entire codebases or individual files using LLMs.
-- **Multi-Provider LLM Support**: Integrates with OpenAI, Azure OpenAI, Anthropic, Gemini, and local Ollama models.
-- **Context Awareness**: Honors `.gitignore`, existing documentation, and makes minimal, safe changes.
-- **Interactive Wizard & Config-Driven Operation**: Choose between a guided CLI wizard or YAML configuration files.
-- **Customizability**: Select documentation types, blacklist file extensions, and add custom LLM instructions.
-- **Token Safety**: Warns if the codebase exceeds the model's context window.
-- **Per-Chunk Summarization**: Scales to large codebases by summarizing code in manageable chunks.
-- **Smoothing & Merging**: Optionally merges and polishes chunk summaries for coherent, high-quality documentation.
-- **IaC Blueprint Management**: Author, compose, validate, and deploy infrastructure blueprints with versioning and state management.
+- **Purpose**: Automate code documentation generation and management using LLMs.
+- **Modes**: Interactive CLI wizard or YAML config-driven operation.
+- **IaC Support**: Modular, composable infrastructure blueprints for cloud-agnostic deployments.
+
+---
+
+## Key Features
+
+- **LLM Integration**: Multi-provider/model support, custom instructions, context window/token management.
+- **Documentation Generation**: Per-chunk summarization, smoothing/merging, minimal/safe updates, doc type selection.
+- **Codebase Awareness**: Honors `.gitignore`, blacklist, and existing documentation.
+- **IaC Blueprints**: Author, compose, validate, and deploy with version/state management.
+- **Extensibility**: Plugin-based architecture for providers and workflows.
 
 ---
 
 ## Architecture
 
-- **CLI Tool**: Written in Python, using [Typer](https://typer.tiangolo.com/) for the command-line interface.
-- **Modular Design**: Plugin-based architecture for extensibility (e.g., custom providers, workflows).
-- **Declarative Approach**: Infrastructure definitions via YAML/JSON.
-- **Provider Integration**: Interacts with cloud providers via SDKs or CLIs.
-- **State & Version Management**: Tracks deployed resources and supports version control for blueprints and deployments.
+- **CLI**: Built with [Typer](https://typer.tiangolo.com/).
+- **Modular/Plugin Design**: Extensible for providers and workflows.
+- **Declarative IaC**: YAML/JSON blueprints.
+- **Provider SDK/CLI Integration**: For cloud operations.
+- **State/Version Tracking**: For blueprints and deployments.
 
 ---
 
@@ -66,10 +67,18 @@ Runesmith also provides infrastructure-as-code (IaC) blueprint management capabi
 
 ### Prerequisites
 
-- **Python**: Version 3.10 (specified in `.python-version` for tools like pyenv).
+- **Python**: Version 3.10 (enforced via `.python-version` for tools like pyenv).
 - **[uv](https://docs.astral.sh/uv/getting-started/installation/)**: For dependency management and virtual environments.
 
-### Steps
+### Installation via PyPI
+
+You can install Runesmith directly from PyPI:
+
+```bash
+pip install runesmith
+```
+
+### Installation from Source
 
 1. **Clone the Repository**
     ```bash
@@ -153,7 +162,7 @@ runesmith generate [--config config.yaml]
 
 **Workflow:**
 
-1. Collect code chunks (respecting `.gitignore` and blacklist).
+1. Crawl codebase (respects `.gitignore` and blacklist).
 2. For each chunk, generate a technical summary using the selected LLM.
 3. Write per-chunk summaries to a temporary folder.
 4. For each documentation type:
@@ -259,13 +268,13 @@ runesmith/
 └── LICENSE
 ```
 
-- **src/runesmith/__init__.py**: Package initializer.
-- **src/runesmith/cli.py**: CLI implementation.
-- **src/runesmith/crawler.py**: Codebase crawling and file filtering.
-- **src/runesmith/llm.py**: LLM provider integration and utilities.
+- **src/runesmith/__init__.py**: Package initializer, may expose public API or metadata.
+- **src/runesmith/cli.py**: CLI implementation using Typer and Questionary.
+- **src/runesmith/crawler.py**: Codebase crawling and file filtering, with .gitignore and blacklist support.
+- **src/runesmith/llm.py**: LLM provider integration, token counting, and documentation generation utilities.
 - **src/runesmith/__main__.py**: CLI entry point.
-- **pyproject.toml**: Project metadata, dependencies, and build system.
-- **uv.lock**: Locked dependency versions and hashes.
+- **pyproject.toml**: Project metadata, dependencies, CLI entry point, and build system.
+- **uv.lock**: Locked dependency versions and hashes for reproducibility.
 - **.python-version**: Specifies Python 3.10 for development.
 - **.gitignore**: Excludes generated, environment-specific, and project-specific files.
 
@@ -289,8 +298,9 @@ The `.gitignore` file is configured to:
 - Omit virtual environment directories and environment files: `.venv`, `*.env`
 - Ignore files/directories matching `batch*`, `config*`
 - Exclude the `web/` directory and `test.py` file
+- Ignore cache files and directories: `cache*`
 
-This prevents versioning of generated, environment-specific, and certain project-specific files and directories.
+This prevents versioning of generated, environment-specific, and certain project-specific files and directories, maintaining repository cleanliness.
 
 ---
 
@@ -337,6 +347,21 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 - Open-source under the MIT License.
 - Contribution guidelines are provided in the repository.
 - Please see the `CONTRIBUTING.md` file for details on submitting issues and pull requests.
+
+---
+
+## Changelog
+
+### 0.1.0 (Initial Release)
+- First public release.
+- Supports documentation generation and updating for codebases using OpenAI, Azure OpenAI, Anthropic, Gemini, and Ollama LLMs.
+- Interactive CLI wizard and YAML config-driven operation.
+- Honors `.gitignore` and file extension blacklist.
+- Per-chunk summarization and optional smoothing/merging for coherent documentation.
+- IaC blueprint management (author, compose, validate, deploy).
+- Deterministic dependency management via `uv.lock`.
+- Python 3.10 support.
+- Installable via PyPI (`pip install runesmith`).
 
 ---
 
